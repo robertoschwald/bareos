@@ -82,7 +82,7 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
         )
         if os.path.exists(self.options["filename"]):
             try:
-                config_file = open(self.options["filename"], "r")
+                config_file = open(self.options["filename"], "br")
             except:
                 bareosfd.DebugMessage(
                     100,
