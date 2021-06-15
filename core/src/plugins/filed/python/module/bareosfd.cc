@@ -294,10 +294,7 @@ static inline bool PySavePacketToNative(
   if (!is_options_plugin) {
     // Only copy back the arguments that are allowed to change.
     if (pSavePkt->fname) {
-      /*
-       * As this has to linger as long as the backup is running we save it in
-       * our plugin context.
-       */
+      // required for full backup run, so save it in plugin_priv_ctx
       if (PyUnicode_Check(pSavePkt->fname)) {
         if (plugin_priv_ctx->fname) { free(plugin_priv_ctx->fname); }
 
@@ -313,10 +310,7 @@ static inline bool PySavePacketToNative(
 
     // Optional field.
     if (pSavePkt->link) {
-      /*
-       * As this has to linger as long as the backup is running we save it in
-       * our plugin context.
-       */
+      // required for full backup run, so save it in plugin_priv_ctx
       if (PyUnicode_Check(pSavePkt->link)) {
         if (plugin_priv_ctx->link) { free(plugin_priv_ctx->link); }
         plugin_priv_ctx->link = strdup(PyUnicode_AsUTF8(pSavePkt->link));
