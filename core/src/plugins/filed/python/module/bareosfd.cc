@@ -258,8 +258,20 @@ static inline PySavePacket* NativeToPySavePacket(struct save_pkt* sp)
   PySavePacket* pSavePkt = PyObject_New(PySavePacket, &PySavePacketType);
 
   if (pSavePkt) {
-    pSavePkt->fname = PyUnicode_FromString(sp->fname ? sp->fname : "");
-    pSavePkt->link = PyUnicode_FromString(sp->link ? sp->link : "");
+    if (sp->fname) {
+      pSavePkt->fname
+          = PyByteArray_FromStringAndSize(sp->fname, strlen(sp->fname));
+    } else {
+      pSavePkt->fname = PyByteArray_FromStringAndSize("", 0);
+    }
+
+    if (sp->link) {
+      pSavePkt->link
+          = PyByteArray_FromStringAndSize(sp->link, strlen(sp->link));
+    } else {
+      pSavePkt->link = PyByteArray_FromStringAndSize("", 0);
+    }
+
     if (sp->statp.st_mode) {
       pSavePkt->statp = (PyObject*)NativeToPyStatPacket(&sp->statp);
     } else {
@@ -295,13 +307,13 @@ static inline bool PySavePacketToNative(
     // Only copy back the arguments that are allowed to change.
     if (pSavePkt->fname) {
       // required for full backup run, so save it in plugin_priv_ctx
-      if (PyUnicode_Check(pSavePkt->fname)) {
+      if (PyByteArray_Check(pSavePkt->fname)) {
         if (plugin_priv_ctx->fname) { free(plugin_priv_ctx->fname); }
 
-        const char* fileName_AsUTF8 = PyUnicode_AsUTF8(pSavePkt->fname);
-        if (!fileName_AsUTF8) return false;
+        const char* fileName = PyByteArray_AsString(pSavePkt->fname);
+        if (!fileName) return false;
 
-        plugin_priv_ctx->fname = strdup(fileName_AsUTF8);
+        plugin_priv_ctx->fname = strdup(fileName);
         sp->fname = plugin_priv_ctx->fname;
       }
     } else {
@@ -311,9 +323,9 @@ static inline bool PySavePacketToNative(
     // Optional field.
     if (pSavePkt->link) {
       // required for full backup run, so save it in plugin_priv_ctx
-      if (PyUnicode_Check(pSavePkt->link)) {
+      if (PyByteArray_Check(pSavePkt->link)) {
         if (plugin_priv_ctx->link) { free(plugin_priv_ctx->link); }
-        plugin_priv_ctx->link = strdup(PyUnicode_AsUTF8(pSavePkt->link));
+        plugin_priv_ctx->link = strdup(PyByteArray_AsString(pSavePkt->link));
         sp->link = plugin_priv_ctx->link;
       }
     }
@@ -347,12 +359,9 @@ static inline bool PySavePacketToNative(
     if (IS_FT_OBJECT(sp->type)) {
       // See if a proper restore object was created.
       if (pSavePkt->object_len > 0) {
-        /*
-         * As this has to linger as long as the backup is running we save it
-         * in our plugin context.
-         */
+        // required for full backup run, so save it in plugin_priv_ctx
         if (pSavePkt->object_name && pSavePkt->object
-            && PyUnicode_Check(pSavePkt->object_name)
+            && PyByteArray_Check(pSavePkt->object_name)
             && PyByteArray_Check(pSavePkt->object)) {
           char* buf;
 
@@ -360,7 +369,7 @@ static inline bool PySavePacketToNative(
             free(plugin_priv_ctx->object_name);
           }
           plugin_priv_ctx->object_name
-              = strdup(PyUnicode_AsUTF8(pSavePkt->object_name));
+              = strdup(PyByteArray_AsString(pSavePkt->object_name));
           sp->object_name = plugin_priv_ctx->object_name;
 
           sp->object_len = pSavePkt->object_len;
