@@ -1700,6 +1700,7 @@ static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
    * CheckFile only has a need for a limited version of the PySavePacket so we
    * handle that here separately and don't call PySavePacketToNative().
    */
+  /// TODO !!!!
   sp.type = pSavePkt->type;
   if (pSavePkt->fname) {
     if (PyUnicode_Check(pSavePkt->fname)) {

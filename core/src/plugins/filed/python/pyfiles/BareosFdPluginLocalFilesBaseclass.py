@@ -109,7 +109,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         mystatp.st_mtime = statp.st_mtime
         mystatp.st_ctime = statp.st_ctime
         # bareosfd.JobMessage( bareosfd.M_ERROR, '\nmystatp: %s\nstatp: %s\n' % (mystatp,statp))
-
+        bareosfd.DebugMessage( 100, "type:" + str(type(self.file_to_backup)) + "\n")
         savepkt.fname = self.file_to_backup
         # os.islink will detect links to directories only when
         # there is no trailing slash - we need to perform checks
