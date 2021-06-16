@@ -259,17 +259,15 @@ static inline PySavePacket* NativeToPySavePacket(struct save_pkt* sp)
 
   if (pSavePkt) {
     if (sp->fname) {
-      pSavePkt->fname
-          = PyByteArray_FromStringAndSize(sp->fname, strlen(sp->fname));
+      pSavePkt->fname = PyBytes_FromStringAndSize(sp->fname, strlen(sp->fname));
     } else {
-      pSavePkt->fname = PyByteArray_FromStringAndSize("", 0);
+      pSavePkt->fname = PyBytes_FromStringAndSize("", 0);
     }
 
     if (sp->link) {
-      pSavePkt->link
-          = PyByteArray_FromStringAndSize(sp->link, strlen(sp->link));
+      pSavePkt->link = PyBytes_FromStringAndSize(sp->link, strlen(sp->link));
     } else {
-      pSavePkt->link = PyByteArray_FromStringAndSize("", 0);
+      pSavePkt->link = PyBytes_FromStringAndSize("", 0);
     }
 
     if (sp->statp.st_mode) {
@@ -307,10 +305,10 @@ static inline bool PySavePacketToNative(
     // Only copy back the arguments that are allowed to change.
     if (pSavePkt->fname) {
       // required for full backup run, so save it in plugin_priv_ctx
-      if (PyByteArray_Check(pSavePkt->fname)) {
+      if (PyBytes_Check(pSavePkt->fname)) {
         if (plugin_priv_ctx->fname) { free(plugin_priv_ctx->fname); }
 
-        const char* fileName = PyByteArray_AsString(pSavePkt->fname);
+        const char* fileName = PyBytes_AsString(pSavePkt->fname);
         if (!fileName) return false;
 
         plugin_priv_ctx->fname = strdup(fileName);
@@ -323,9 +321,9 @@ static inline bool PySavePacketToNative(
     // Optional field.
     if (pSavePkt->link) {
       // required for full backup run, so save it in plugin_priv_ctx
-      if (PyByteArray_Check(pSavePkt->link)) {
+      if (PyBytes_Check(pSavePkt->link)) {
         if (plugin_priv_ctx->link) { free(plugin_priv_ctx->link); }
-        plugin_priv_ctx->link = strdup(PyByteArray_AsString(pSavePkt->link));
+        plugin_priv_ctx->link = strdup(PyBytes_AsString(pSavePkt->link));
         sp->link = plugin_priv_ctx->link;
       }
     }
@@ -361,21 +359,21 @@ static inline bool PySavePacketToNative(
       if (pSavePkt->object_len > 0) {
         // required for full backup run, so save it in plugin_priv_ctx
         if (pSavePkt->object_name && pSavePkt->object
-            && PyByteArray_Check(pSavePkt->object_name)
-            && PyByteArray_Check(pSavePkt->object)) {
+            && PyBytes_Check(pSavePkt->object_name)
+            && PyBytes_Check(pSavePkt->object)) {
           char* buf;
 
           if (plugin_priv_ctx->object_name) {
             free(plugin_priv_ctx->object_name);
           }
           plugin_priv_ctx->object_name
-              = strdup(PyByteArray_AsString(pSavePkt->object_name));
+              = strdup(PyBytes_AsString(pSavePkt->object_name));
           sp->object_name = plugin_priv_ctx->object_name;
 
           sp->object_len = pSavePkt->object_len;
           sp->index = pSavePkt->object_index;
 
-          if ((buf = PyByteArray_AsString(pSavePkt->object))) {
+          if ((buf = PyBytes_AsString(pSavePkt->object))) {
             if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
             plugin_priv_ctx->object = (char*)malloc(pSavePkt->object_len);
             memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
@@ -519,7 +517,13 @@ static inline PyIoPacket* NativeToPyIoPacket(struct io_pkt* io)
     pIoPkt->count = io->count;
     pIoPkt->flags = io->flags;
     pIoPkt->mode = io->mode;
-    pIoPkt->fname = io->fname;
+
+    if (io->fname) {
+      pIoPkt->fname = PyBytes_FromStringAndSize(io->fname, strlen(io->fname));
+    } else {
+      pIoPkt->fname = PyBytes_FromStringAndSize("", 0);
+    }
+
     pIoPkt->whence = io->whence;
     pIoPkt->offset = io->offset;
     if (io->func == IO_WRITE && io->count > 0) {
