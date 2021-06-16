@@ -82,7 +82,7 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
         )
         if os.path.exists(self.options["filename"]):
             try:
-                config_file = open(self.options["filename"], "br")
+                config_file = open(self.options["filename"], "rb")
             except:
                 bareosfd.DebugMessage(
                     100,
@@ -108,8 +108,8 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
             if os.path.isdir(listItem):
                 fullDirName = listItem
                 # FD requires / at the end of a directory name
-                if not fullDirName.endswith(tuple("/")):
-                    fullDirName += "/"
+                if not fullDirName.endswith(b"/"):
+                    fullDirName += b"/"
                 self.append_file_to_backup(fullDirName)
                 for topdir, dirNames, fileNames in os.walk(listItem):
                     for fileName in fileNames:
@@ -120,7 +120,7 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
                         ):
                             self.append_file_to_backup(os.path.join(topdir, fileName))
                     for dirName in dirNames:
-                        fullDirName = os.path.join(topdir, dirName) + "/"
+                        fullDirName = os.path.join(topdir, dirName) + b"/"
                         self.append_file_to_backup(fullDirName)
         bareosfd.DebugMessage(150, "Filelist: %s\n" % (self.files_to_backup))
 
