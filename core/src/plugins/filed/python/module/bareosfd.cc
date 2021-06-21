@@ -259,15 +259,15 @@ static inline PySavePacket* NativeToPySavePacket(struct save_pkt* sp)
 
   if (pSavePkt) {
     if (sp->fname) {
-      pSavePkt->fname = PyBytes_FromStringAndSize(sp->fname, strlen(sp->fname));
+      pSavePkt->fname = PyBytes_FromString(sp->fname);
     } else {
-      pSavePkt->fname = PyBytes_FromStringAndSize("", 0);
+      pSavePkt->fname = PyBytes_FromString("");
     }
 
     if (sp->link) {
-      pSavePkt->link = PyBytes_FromStringAndSize(sp->link, strlen(sp->link));
+      pSavePkt->link = PyBytes_FromString(sp->link);
     } else {
-      pSavePkt->link = PyBytes_FromStringAndSize("", 0);
+      pSavePkt->link = PyBytes_FromString("");
     }
 
     if (sp->statp.st_mode) {
@@ -519,9 +519,9 @@ static inline PyIoPacket* NativeToPyIoPacket(struct io_pkt* io)
     pIoPkt->mode = io->mode;
 
     if (io->fname) {
-      pIoPkt->fname = PyBytes_FromStringAndSize(io->fname, strlen(io->fname));
+      pIoPkt->fname = PyBytes_FromString(io->fname);
     } else {
-      pIoPkt->fname = PyBytes_FromStringAndSize("", 0);
+      pIoPkt->fname = PyBytes_FromString("");
     }
 
     pIoPkt->whence = io->whence;

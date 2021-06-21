@@ -271,7 +271,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         except Exception as e:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
-                'Could not set attributes for file %s: "%s"' % (self.FNAME, e),
+                'Could not set attributes for file %s: "%s"\n' % (self.FNAME, e),
             )
         return bareosfd.bRC_OK
 
