@@ -717,8 +717,8 @@ static inline PyRestorePacket* NativeToPyRestorePacket(struct restore_pkt* rp)
     pRestorePacket->uid = rp->uid;
     pRestorePacket->statp = (PyObject*)NativeToPyStatPacket(&rp->statp);
     pRestorePacket->attrEx = rp->attrEx;
-    pRestorePacket->ofname = rp->ofname;
-    pRestorePacket->olname = rp->olname;
+    pRestorePacket->ofname = PyBytes_FromString(rp->ofname);
+    pRestorePacket->olname = PyBytes_FromString(rp->olname);
     pRestorePacket->where = rp->where;
     pRestorePacket->RegexWhere = rp->RegexWhere;
     pRestorePacket->replace = rp->replace;
@@ -1841,6 +1841,14 @@ static inline char* PyGetByteArrayValue(PyObject* object)
   return PyByteArray_AsString(object);
 }
 
+static inline char* PyGetBytesValue(PyObject* object)
+{
+  if (!object || !PyBytes_Check(object)) { return (char*)""; }
+
+  return PyBytes_AsString(object);
+}
+
+
 // Python specific handlers for PyRestoreObject structure mapping.
 
 // Representation.
@@ -2011,10 +2019,10 @@ static PyObject* PySavePacket_repr(PySavePacket* self)
        "no_read=%d, portable=%d, accurate_found=%d, "
        "cmd=\"%s\", save_time=%ld, delta_seq=%ld, object_name=\"%s\", "
        "object=\"%s\", object_len=%ld, object_index=%ld)",
-       PyGetStringValue(self->fname), PyGetStringValue(self->link), self->type,
+       PyGetBytesValue(self->fname), PyGetBytesValue(self->link), self->type,
        print_flags_bitmap(self->flags), self->no_read, self->portable,
        self->accurate_found, self->cmd, self->save_time, self->delta_seq,
-       PyGetStringValue(self->object_name), PyGetByteArrayValue(self->object),
+       PyGetBytesValue(self->object_name), PyGetByteArrayValue(self->object),
        self->object_len, self->object_index);
 
   s = PyUnicode_FromString(buf.c_str());
@@ -2074,8 +2082,14 @@ static void PySavePacket_dealloc(PySavePacket* self)
 // Representation.
 static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
 {
-  PyObject *stat_repr, *s;
+  PyObject* stat_repr;
+  PyObject* s;
   PoolMem buf(PM_MESSAGE);
+
+  PyObject* py_ofname
+      = PyUnicode_FromEncodedObject(self->ofname, "utf-8", "ignore");
+  PyObject* py_olname
+      = PyUnicode_FromEncodedObject(self->olname, "utf-8", "ignore");
 
   stat_repr = PyObject_Repr(self->statp);
   Mmsg(buf,
@@ -2085,10 +2099,12 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
        "create_status=%d)",
        self->stream, self->data_stream, self->type, self->file_index,
        self->LinkFI, self->uid, PyGetStringValue(stat_repr), self->attrEx,
-       self->ofname, self->olname, self->where, self->RegexWhere, self->replace,
-       self->create_status);
+       PyGetBytesValue(py_ofname), PyGetBytesValue(py_olname), self->where,
+       self->RegexWhere, self->replace, self->create_status);
 
   s = PyUnicode_FromString(buf.c_str());
+  Py_DECREF(py_ofname);
+  Py_DECREF(py_olname);
   Py_DECREF(stat_repr);
 
   return s;

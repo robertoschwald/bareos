@@ -48,7 +48,6 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
 @$out $tmp/log1.out
-setdebug level=800 client trace=1
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
 status director
@@ -71,6 +70,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @# now do a restore
 @#
 @$out $tmp/log2.out
+setdebug level=800 client trace=1
 restore client=bareos-fd fileset=PluginTest where=$tmp/bareos-restores select all done yes
 status client=bareos-fd
 wait

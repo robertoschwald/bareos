@@ -150,12 +150,12 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         """
         bareosfd.DebugMessage(
             100,
-            "create_file() entry point in Python called with %s\n" % (restorepkt),
+            "create_file() entry point in Python called with %s\n" % repr(restorepkt),
         )
         FNAME = restorepkt.ofname
         if not FNAME:
             return bareosfd.bRC_Error
-        dirname = os.path.dirname(FNAME.rstrip("/"))
+        dirname = os.path.dirname(FNAME.rstrip(b"/"))
         if not os.path.exists(dirname):
             bareosfd.DebugMessage(
                 200, "Directory %s does not exist, creating it now\n" % dirname
@@ -246,14 +246,14 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
     def end_restore_file(self):
         bareosfd.DebugMessage(
             100,
-            "end_restore_file() entry point in Python called FNAME: %s\n" % self.FNAME,
+            "end_restore_file() entry point in Python called FNAME: %s\n" % self.FNAME.decode("utf-8"),
         )
         bareosfd.DebugMessage(
             150,
             "end_restore_file set file attributes "
-            + self.FNAME
-            + " with stat "
-            + str(self.statp[self.FNAME])
+            + self.FNAME.decode("utf-8")
+#            + " with stat "
+#            + str(self.statp[self.FNAME.decode("utf-8")])
             + "\n",
         )
         try:
