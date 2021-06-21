@@ -21,5 +21,16 @@ if lsof="$(command -v lsof)"; then
       kill -9 "$pid"
     fi
   done
+elif sockstat="$(command -v sockstat)"; then
+  for port in $BASEPORT $BAREOS_DIRECTOR_PORT $BAREOS_STORAGE_PORT \
+    $BAREOS_STORAGE2_PORT $BAREOS_FD_PORT $MINIO_PORT; do
+    pids="$("${sockstat}" -q -l -P tcp -p "$port" | awk '{ print $3 }')"
+    if [ "$pids" ]; then
+      print_debug "Killing process listening on $port with PID $pids"
+      # $pids could contain multiple pids, so we shouldn't quote
+      # shellcheck disable=SC2086
+      kill -9 $pids
+    fi
+  done
 fi
 exit 0
