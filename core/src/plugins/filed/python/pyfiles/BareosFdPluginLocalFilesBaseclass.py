@@ -88,7 +88,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         except Exception as e:
             bareosfd.JobMessage(
                 bareosfd.M_ERROR,
-                'Could net get stat-info for file %s: "%s"' % (self.file_to_backup, e),
+                'Could not get stat-info for file %s: "%s"' % (self.file_to_backup, e),
             )
         # As of Bareos 19.2.7 attribute names in bareosfd.StatPacket differ from os.stat
         # In this case we have to translate names
@@ -190,7 +190,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
                 except Exception as e:
                     bareosfd.JobMessage(
                         bareosfd.M_ERROR,
-                        'Could net create fifo %s: "%s"' % (FNAME, e),
+                        'Could not create fifo %s: "%s"' % (FNAME, e),
                     )
             restorepkt.create_status = bareosfd.CF_CREATED
         else:
@@ -219,7 +219,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
 
         bareosfd.DebugMessage(
             150,
-            "Set file attributes " + file_name + " with stat " + str(file_attr) + "\n",
+            "Set file attributes " + file_name.decode("utf-8","ignore") + " with stat " + str(file_attr) + "\n",
         )
         try:
             os.chown(file_name, file_attr.st_uid, file_attr.st_gid)
@@ -229,7 +229,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
             bareosfd.DebugMessage(
                 150,
                 "Verified file attributes "
-                + file_name
+                + file_name.decode("utf-8", "ignore")
                 + " with stat "
                 + str(newStat)
                 + "\n",
@@ -238,7 +238,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         except Exception as e:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
-                'Could net set attributes for file %s: "%s"' % (file_name, e),
+                'Could not set attributes for file %s: "%s"\n' % (file_name.decode("utf-8", "ignore"), e),
             )
 
         return bareosfd.bRC_OK
@@ -271,7 +271,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         except Exception as e:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
-                'Could net set attributes for file %s: "%s"' % (self.FNAME, e),
+                'Could not set attributes for file %s: "%s"' % (self.FNAME, e),
             )
         return bareosfd.bRC_OK
 
