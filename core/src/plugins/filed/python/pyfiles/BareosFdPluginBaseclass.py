@@ -179,10 +179,14 @@ class BareosFdPluginBaseclass(object):
             else:
                 bareosfd.DebugMessage(
                     100,
-                    "Open file %s for reading with %s\n" % (self.FNAME, IOP),
+                    "Open file %s for reading with %s\n" % (self.FNAME.encode("utf-8", "ignore"), IOP),
                 )
                 self.file = open(self.FNAME, "rb")
-        except:
+        except Exception as e:
+            bareosfd.DebugMessage(
+                100,
+                "Open file %s for reading failed: %s\n" % (self.FNAME, e),
+            )
             IOP.status = -1
             return bRC_Error
         return bRC_OK

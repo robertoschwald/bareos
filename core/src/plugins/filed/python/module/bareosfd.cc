@@ -313,9 +313,11 @@ static inline bool PySavePacketToNative(
 
         plugin_priv_ctx->fname = strdup(fileName);
         sp->fname = plugin_priv_ctx->fname;
+      } else {
+        return false;
       }
     } else {
-      goto bail_out;
+      return false;
     }
 
     // Optional field.
@@ -332,7 +334,7 @@ static inline bool PySavePacketToNative(
     if (pSavePkt->statp) {
       PyStatPacketToNative((PyStatPacket*)pSavePkt->statp, &sp->statp);
     } else {
-      goto bail_out;
+      return false;
     }
 
     sp->type = pSavePkt->type;
@@ -341,16 +343,16 @@ static inline bool PySavePacketToNative(
       char* flags;
 
       if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
-        goto bail_out;
+        return false;
       }
 
       if ((flags = PyByteArray_AsString(pSavePkt->flags))) {
         memcpy(sp->flags, flags, sizeof(sp->flags));
       } else {
-        goto bail_out;
+        return false;
       }
     } else {
-      goto bail_out;
+      return false;
     }
 
     // Special code for handling restore objects.
@@ -379,13 +381,13 @@ static inline bool PySavePacketToNative(
             memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
             sp->object = plugin_priv_ctx->object;
           } else {
-            goto bail_out;
+            return false;
           }
         } else {
-          goto bail_out;
+          return false;
         }
       } else {
-        goto bail_out;
+        return false;
       }
     } else {
       sp->no_read = pSavePkt->no_read;
@@ -399,23 +401,20 @@ static inline bool PySavePacketToNative(
       char* flags;
 
       if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
-        goto bail_out;
+        return false;
       }
 
       if ((flags = PyByteArray_AsString(pSavePkt->flags))) {
         memcpy(sp->flags, flags, sizeof(sp->flags));
       } else {
-        goto bail_out;
+        return false;
       }
     } else {
-      goto bail_out;
+      return false;
     }
   }
 
   return true;
-
-bail_out:
-  return false;
 }
 
 /**
@@ -1387,9 +1386,6 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
   int level;
   char* dbgmsg = NULL;
   PluginContext* plugin_ctx = plugin_context;
-  /* plugin_private_context* ppc = */
-  /*     (plugin_private_context*)plugin_ctx->plugin_private_context;
-   */
 
   if (!PyArg_ParseTuple(args, "i|z:BareosDebugMessage", &level, &dbgmsg)) {
     return NULL;
@@ -2168,8 +2164,9 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
        "buf=\"%s\", fname=\"%s\", status=%ld, io_errno=%ld, lerror=%ld, "
        "whence=%ld, offset=%lld, win32=%d)",
        self->func, self->count, self->flags, (self->mode & ~S_IFMT),
-       PyGetByteArrayValue(self->buf), self->fname, self->status,
-       self->io_errno, self->lerror, self->whence, self->offset, self->win32);
+       PyGetByteArrayValue(self->buf), PyGetBytesValue(self->fname),
+       self->status, self->io_errno, self->lerror, self->whence, self->offset,
+       self->win32);
   s = PyUnicode_FromString(buf.c_str());
 
   return s;
@@ -2261,7 +2258,7 @@ static void PyAclPacket_dealloc(PyAclPacket* self)
   PyObject_Del(self);
 }
 
-// Python specific handlers for PyIOPacket structure mapping.
+// Python specific handlers for PyXattrPacket structure mapping.
 
 // Representation.
 static PyObject* PyXattrPacket_repr(PyXattrPacket* self)

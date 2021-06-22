@@ -153,6 +153,8 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
             "create_file() entry point in Python called with %s\n" % repr(restorepkt),
         )
         FNAME = restorepkt.ofname
+        if not type(FNAME) is bytes:
+            return bareosfd.bRC_Error
         if not FNAME:
             return bareosfd.bRC_Error
         dirname = os.path.dirname(FNAME.rstrip(b"/"))
@@ -162,7 +164,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
             )
             os.makedirs(dirname)
         # open creates the file, if not yet existing, we close it again right
-        # aways it will be opened again in plugin_io.
+        # always it will be opened again in plugin_io.
         if restorepkt.type == bareosfd.FT_REG:
             open(FNAME, "wb").close()
             restorepkt.create_status = bareosfd.CF_EXTRACT
@@ -238,7 +240,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         except Exception as e:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
-                'Could not set attributes for file %s: "%s"\n' % (file_name.decode("utf-8", "ignore"), e),
+                'set_file_attributes: Could not set attributes for file %s: "%s"\n' % (file_name.decode("utf-8", "ignore"), e),
             )
 
         return bareosfd.bRC_OK
@@ -246,33 +248,46 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
     def end_restore_file(self):
         bareosfd.DebugMessage(
             100,
-            "end_restore_file() entry point in Python called FNAME: %s\n" % self.FNAME.decode("utf-8"),
+            "end_restore_file() entry point in Python called FNAME: %s\n" % self.FNAME.decode("utf-8","ignore"),
         )
-        bareosfd.DebugMessage(
-            150,
-            "end_restore_file set file attributes "
-            + self.FNAME.decode("utf-8")
-#            + " with stat "
-#            + str(self.statp[self.FNAME.decode("utf-8")])
-            + "\n",
-        )
+        #bareosfd.DebugMessage(
+        #    150,
+        #    "end_restore_file set file attributes "
+        #    + self.FNAME.decode("utf-8")
+        #    + " with stat "
+        #    #+ str(self.statp[self.FNAME.decode("utf-8")])
+        #    + str(self.statp[self.FNAME])
+        #    + "\n",
+        #)
         try:
             os.chown(
                 self.FNAME, self.statp[self.FNAME].st_uid, self.statp[self.FNAME].st_gid
             )
+        except Exception as e:
+            bareosfd.JobMessage(
+                bareosfd.M_WARNING,
+                'end_restore_file: Could not chown file %s: "%s"\n' % (self.FNAME, e),
+            )
+        try:
             os.chmod(self.FNAME, self.statp[self.FNAME].st_mode)
+        except Exception as e:
+            bareosfd.JobMessage(
+                bareosfd.M_WARNING,
+                'end_restore_file: Could not chmod file %s: "%s"\n' % (self.FNAME, e),
+            )
+        try:
             os.utime(
                 self.FNAME,
                 (self.statp[self.FNAME].st_atime, self.statp[self.FNAME].st_mtime),
             )
-            # del sometimes leads to no-key errors, it seams that end_restore_file is sometimes called
-            # multipl times.
-            # del self.statp[self.FNAME]
         except Exception as e:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
-                'Could not set attributes for file %s: "%s"\n' % (self.FNAME, e),
+                'end_restore_file: Could not set time on file %s: "%s"\n' % (self.FNAME, e),
             )
+            # del sometimes leads to no-key errors, it seems that
+            # end_restore_file is sometimes called multiple times.
+            # del self.statp[self.FNAME]
         return bareosfd.bRC_OK
 
     def end_backup_file(self):
