@@ -166,7 +166,8 @@ class BareosFdPluginBaseclass(object):
             if IOP.flags & (os.O_CREAT | os.O_WRONLY):
                 bareosfd.DebugMessage(
                     100,
-                    "Open file %s for writing with %s\n" % (self.FNAME, IOP),
+                    #"Open file %s for writing with %s\n" % (self.FNAME, IOP),
+                    "Open file for writing\n",
                 )
                 dirname = os.path.dirname(self.FNAME)
                 if not os.path.exists(dirname):
