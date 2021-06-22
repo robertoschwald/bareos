@@ -254,8 +254,8 @@ class BareosFdPluginBaseclass(object):
             250,
             "plugin_io called with function %s filename %s\n" % (IOP.func, IOP.fname),#.decode("utf-8", "replace")),
         )
-        self.FNAME = IOP.fname
-        bareosfd.DebugMessage(250, "self.FNAME is set to %s\n" % (self.FNAME))
+        #self.FNAME = IOP.fname
+        #bareosfd.DebugMessage(250, "self.FNAME is set to %s\n" % (self.FNAME))
         if IOP.func == IO_OPEN:
             return self.plugin_io_open(IOP)
         elif IOP.func == IO_CLOSE:
