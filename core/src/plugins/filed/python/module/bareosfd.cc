@@ -749,8 +749,8 @@ static inline PyRestorePacket* NativeToPyRestorePacket(struct restore_pkt* rp)
     pRestorePacket->attrEx = rp->attrEx;
     pRestorePacket->ofname = PyBytes_FromString(rp->ofname);
     pRestorePacket->olname = PyBytes_FromString(rp->olname);
-    pRestorePacket->where = rp->where;
-    pRestorePacket->RegexWhere = rp->RegexWhere;
+    pRestorePacket->where = PyBytes_FromString(rp->where);
+    pRestorePacket->RegexWhere = PyBytes_FromString(rp->RegexWhere);
     pRestorePacket->replace = rp->replace;
     pRestorePacket->create_status = rp->create_status;
   }
@@ -1343,7 +1343,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
       if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
                                                 &value)
           == bRC_OK) {
-        if (value) { pRetVal = PyUnicode_FromString(value); }
+        if (value) { pRetVal = PyBytes_FromString(value); }
       }
       break;
     }
@@ -2117,6 +2117,8 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
       = PyUnicode_FromEncodedObject(self->ofname, "utf-8", "ignore");
   PyObject* py_olname
       = PyUnicode_FromEncodedObject(self->olname, "utf-8", "ignore");
+  PyObject* py_where
+      = PyUnicode_FromEncodedObject(self->where, "utf-8", "ignore");
 
   stat_repr = PyObject_Repr(self->statp);
   Mmsg(buf,
@@ -2126,8 +2128,9 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
        "create_status=%d)",
        self->stream, self->data_stream, self->type, self->file_index,
        self->LinkFI, self->uid, PyGetStringValue(stat_repr), self->attrEx,
-       PyGetBytesValue(py_ofname), PyGetBytesValue(py_olname), self->where,
-       self->RegexWhere, self->replace, self->create_status);
+       PyGetBytesValue(py_ofname), PyGetBytesValue(py_olname),
+       PyGetBytesValue(py_where), PyGetBytesValue(self->RegexWhere),
+       self->replace, self->create_status);
 
   s = PyUnicode_FromString(buf.c_str());
   Py_DECREF(py_ofname);

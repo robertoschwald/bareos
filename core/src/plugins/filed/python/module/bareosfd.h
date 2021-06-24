@@ -347,8 +347,8 @@ typedef struct {
   const char* attrEx;           /* Extended attributes if any */
   PyObject* ofname;             /* Output filename */
   PyObject* olname;             /* Output link name */
-  const char* where;            /* Where */
-  const char* RegexWhere;       /* Regex where */
+  PyObject* where;              /* Where */
+  PyObject* RegexWhere;         /* Regex where */
   int replace;                  /* Replace flag */
   int create_status;            /* Status from createFile() */
 } PyRestorePacket;
@@ -384,9 +384,9 @@ static PyMemberDef PyRestorePacket_members[] = {
      (char*)"Output filename"},
     {(char*)"olname", T_OBJECT, offsetof(PyRestorePacket, olname), 0,
      (char*)"Output link name"},
-    {(char*)"where", T_STRING, offsetof(PyRestorePacket, where), 0,
+    {(char*)"where", T_OBJECT, offsetof(PyRestorePacket, where), 0,
      (char*)"Where"},
-    {(char*)"regexwhere", T_STRING, offsetof(PyRestorePacket, RegexWhere), 0,
+    {(char*)"regexwhere", T_OBJECT, offsetof(PyRestorePacket, RegexWhere), 0,
      (char*)"Regex where"},
     {(char*)"replace", T_INT, offsetof(PyRestorePacket, replace), 0,
      (char*)"Replace flag"},

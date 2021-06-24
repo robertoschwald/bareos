@@ -58,7 +58,7 @@ class BareosFdPluginBaseclass(object):
         self.jobName = bareosfd.GetValue(bVarJobName)
         # jobName is of format myName.2020-05-12_11.35.27_05
         # short Name is everything left of the third point seen from the right
-        self.shortName = self.jobName.rsplit(".", 3)[0]
+        self.shortName = self.jobName.rsplit(b".", 3)[0]
         self.workingdir = bareosfd.GetValue(bVarWorkingDir)
         self.startTime = int(time.time())
         self.FNAME = b"undef"

@@ -220,7 +220,6 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
                 savepkt.object_name = file_to_backup
                 savepkt.object = bytearray(
                     os.path.splitext(file_to_backup)[0])
-                )
 
                 savepkt.object_len = len(savepkt.object)
                 savepkt.object_index = self.object_index_seq
