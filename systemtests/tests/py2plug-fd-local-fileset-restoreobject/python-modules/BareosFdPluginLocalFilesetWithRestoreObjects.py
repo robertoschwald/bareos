@@ -326,17 +326,17 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
             100, "ROP.object(%s): %s\n" % (type(ROP.object), repr(ROP.object))
         )
         orig_filename = os.path.splitext(ROP.object_name)[0]
-        if ROP.object_name.endswith(".sha256sum"):
+        if ROP.object_name.endswith(b".sha256sum"):
             self.sha256sums_by_filename[orig_filename] = ROP.object
             # self.sha256sums_by_filename[orig_filename] = str(ROP.object)
-        elif ROP.object_name.endswith(".abspath"):
+        elif ROP.object_name.endswith(b".abspath"):
             if ROP.object.decode() != orig_filename:
                 bareosfd.JobMessage(
                     M_ERROR,
                     "bad restoreobject orig_fname: %s restoreobject_fname: %s\n"
                     % (orig_filename, ROP.object.decode()),
                 )
-        elif ROP.object_name.endswith(".longrestoreobject"):
+        elif ROP.object_name.endswith(b".longrestoreobject"):
             stored_length = int(os.path.splitext(ROP.object_name)[0])
             if ROP.object.decode() != "a" * stored_length:
                 bareosfd.JobMessage(

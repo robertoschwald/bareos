@@ -421,7 +421,7 @@ static inline bool PySavePacketToNative(
       sp->no_read = pSavePkt->no_read;
       sp->delta_seq = pSavePkt->delta_seq;
     }
-  } else {
+  } else {  // is options_plugin
     sp->no_read = pSavePkt->no_read;
     sp->delta_seq = pSavePkt->delta_seq;
 
@@ -1888,7 +1888,7 @@ static PyObject* PyRestoreObject_repr(PyRestoreObject* self)
        "RestoreObject(object_name=\"%s\", object=\"%s\", plugin_name=\"%s\", "
        "object_type=%d, object_len=%d, object_full_len=%d, "
        "object_index=%d, object_compression=%d, stream=%d, jobid=%u)",
-       PyGetStringValue(self->object_name), PyGetByteArrayValue(self->object),
+       PyGetBytesValue(self->object_name), PyGetByteArrayValue(self->object),
        self->plugin_name, self->object_type, self->object_len,
        self->object_full_len, self->object_index, self->object_compression,
        self->stream, self->JobId);
