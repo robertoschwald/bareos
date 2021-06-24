@@ -109,12 +109,11 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         )
         if os.path.exists(self.options["filename"]):
             try:
-                config_file = open(self.options["filename"], "r")
-                # config_file = open(self.options["filename"], "rb")
-            except:
+                config_file = open(self.options["filename"], "rb")
+            except Exception as e:
                 bareosfd.DebugMessage(
                     100,
-                    "Could not open file %s\n" % (self.options["filename"]),
+                    "Could not open file %s: %s\n" % (self.options["filename"], e),
                 )
                 return bRC_Error
         else:
@@ -144,24 +143,35 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
                             self.files_to_backup.append(os.path.join(topdir, fileName))
                             if os.path.isfile(os.path.join(topdir, fileName)):
                                 self.files_to_backup.append(
-                                    os.path.join(topdir, fileName) + ".sha256sum"
+                                    os.path.join(topdir, fileName) + b".sha256sum"
                                 )
                                 self.files_to_backup.append(
-                                    os.path.join(topdir, fileName) + ".abspath"
+                                    os.path.join(topdir, fileName) + b".abspath"
                                 )
             else:
                 if os.path.isfile(listItem):
-                    self.files_to_backup.append(listItem + ".sha256sum")
-                    self.files_to_backup.append(listItem + ".abspath")
+                    self.files_to_backup.append(listItem + b".sha256sum")
+                    self.files_to_backup.append(listItem + b".abspath")
 
         for longrestoreobject_length in range(998, 1004):
-            self.files_to_backup.append(
-                "%s.longrestoreobject" % longrestoreobject_length
-            )
+            try:
+                self.files_to_backup.append(
+                    ("%s.longrestoreobject" % longrestoreobject_length).encode()
+                )
+            except Exception as e:
+                bareosfd.DebugMessage(
+                    100,
+                    " %s\n" % (e),
+                )
 
         if not self.files_to_backup:
+            bareosfd.DebugMessage(
+                100,
+                "No (allowed) files to backup found\n",
+            )
+            sleep (10);
             bareosfd.JobMessage(
-                M_ERROR,
+                M_INFO,
                 "No (allowed) files to backup found\n",
             )
             return bRC_Error
@@ -177,53 +187,65 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         if not self.files_to_backup:
             bareosfd.DebugMessage(100, "No files to backup\n")
             return bRC_Skip
+        try:
+            file_to_backup = self.files_to_backup.pop()
+            bareosfd.DebugMessage(100, "start_backup_file() called with file %s\n" %(file_to_backup))
 
-        file_to_backup = self.files_to_backup.pop()
+            statp = bareosfd.StatPacket()
+            savepkt.statp = statp
 
-        statp = bareosfd.StatPacket()
-        savepkt.statp = statp
+            if file_to_backup.endswith(b'.sha256sum'):
+                checksum = self.get_sha256sum(os.path.splitext(file_to_backup)[0])
+                savepkt.type = bareosfd.FT_RESTORE_FIRST
+                savepkt.fname = file_to_backup
+                savepkt.object_name = file_to_backup
+                savepkt.object = bytearray(checksum.encode("utf-8"))
+                savepkt.object_len = len(savepkt.object)
+                savepkt.object_index = self.object_index_seq
+                self.object_index_seq += 1
 
-        if file_to_backup.endswith(".sha256sum"):
-            checksum = self.get_sha256sum(os.path.splitext(file_to_backup)[0])
-            savepkt.type = FT_RESTORE_FIRST
-            savepkt.fname = file_to_backup
-            savepkt.object_name = file_to_backup
-            savepkt.object = bytearray(checksum.encode("utf-8"))
-            savepkt.object_len = len(savepkt.object)
-            savepkt.object_index = self.object_index_seq
-            self.object_index_seq += 1
+            elif file_to_backup.endswith(b'.abspath'):
+                savepkt.type = bareosfd.FT_RESTORE_FIRST
+                savepkt.fname = file_to_backup
+                savepkt.object_name = file_to_backup
+                savepkt.object = bytearray(
+                    os.path.splitext(file_to_backup)[0].encode("utf-8")
+                )
 
-        elif file_to_backup.endswith(".abspath"):
-            savepkt.type = FT_RESTORE_FIRST
-            savepkt.fname = file_to_backup
-            savepkt.object_name = file_to_backup
-            savepkt.object = bytearray(
-                os.path.splitext(file_to_backup)[0].encode("utf-8")
+                savepkt.object_len = len(savepkt.object)
+                savepkt.object_index = self.object_index_seq
+                self.object_index_seq += 1
+
+            elif file_to_backup.endswith(b'.longrestoreobject'):
+                bareosfd.DebugMessage(100, "ends in .longrestoreobject : file %s\n" %(file_to_backup))
+                teststring_length = int(os.path.splitext(file_to_backup)[0])
+                savepkt.type = bareosfd.FT_RESTORE_FIRST
+                savepkt.fname = file_to_backup
+                savepkt.object_name = file_to_backup
+                savepkt.object = bytearray(b"a" * teststring_length)
+                savepkt.object_len = len(savepkt.object)
+                savepkt.object_index = self.object_index_seq
+                self.object_index_seq += 1
+                bareosfd.DebugMessage(100, "ends in .longrestoreobject : file %s %s\n" %(file_to_backup, savepkt))
+                bareosfd.DebugMessage(100, "savepkt.type: %d \n" %(savepkt.type))
+
+            else:
+                savepkt.fname = file_to_backup
+                savepkt.type = bareosfd.FT_REG
+
+            bareosfd.DebugMessage(100, "Starting backup of {}, filetype {}\n".format(file_to_backup, savepkt.type))
+            bareosfd.JobMessage(
+                M_INFO,
+                "Starting backup of {}\n".format(file_to_backup),
             )
+            return bareosfd.bRC_OK
 
-            savepkt.object_len = len(savepkt.object)
-            savepkt.object_index = self.object_index_seq
-            self.object_index_seq += 1
-
-        elif file_to_backup.endswith(".longrestoreobject"):
-            teststring_length = int(os.path.splitext(file_to_backup)[0])
-            savepkt.type = FT_RESTORE_FIRST
-            savepkt.fname = file_to_backup
-            savepkt.object_name = file_to_backup
-            savepkt.object = bytearray(b"a" * teststring_length)
-            savepkt.object_len = len(savepkt.object)
-            savepkt.object_index = self.object_index_seq
-            self.object_index_seq += 1
-
-        else:
-            savepkt.fname = file_to_backup
-            savepkt.type = FT_REG
-
-        bareosfd.JobMessage(
-            M_INFO,
-            "Starting backup of {}\n".format(file_to_backup),
-        )
-        return bRC_OK
+        except Exception as e:
+            bareosfd.DebugMessage(
+                100,
+                "start_backup_file(): %s\n" % (e),
+            )
+            return bareosfd.bRC_Error
 
     def end_backup_file(self):
         """

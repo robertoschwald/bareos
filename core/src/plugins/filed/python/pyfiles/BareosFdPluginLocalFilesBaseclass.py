@@ -76,6 +76,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
             bareosfd.DebugMessage(100, "No files to backup\n")
             return bareosfd.bRC_Skip
 
+        bareosfd.DebugMessage(100, "Found files to backup\n")
         self.file_to_backup = self.files_to_backup.pop()
         bareosfd.DebugMessage(100, "file: " + self.file_to_backup.decode("utf-8", "replace") + "\n")
 

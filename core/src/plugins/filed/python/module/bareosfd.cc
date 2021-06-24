@@ -314,9 +314,11 @@ static inline bool PySavePacketToNative(
         plugin_priv_ctx->fname = strdup(fileName);
         sp->fname = plugin_priv_ctx->fname;
       } else {
+        PyErr_SetString(PyExc_TypeError, "fname needs to be bytes type");
         return false;
       }
     } else {
+      PyErr_SetString(PyExc_TypeError, "fname is empty");
       return false;
     }
 
@@ -327,6 +329,9 @@ static inline bool PySavePacketToNative(
         if (plugin_priv_ctx->link) { free(plugin_priv_ctx->link); }
         plugin_priv_ctx->link = strdup(PyBytes_AsString(pSavePkt->link));
         sp->link = plugin_priv_ctx->link;
+      } else {
+        PyErr_SetString(PyExc_TypeError, "link needs to be bytes");
+        return false;
       }
     }
 
@@ -334,6 +339,7 @@ static inline bool PySavePacketToNative(
     if (pSavePkt->statp) {
       PyStatPacketToNative((PyStatPacket*)pSavePkt->statp, &sp->statp);
     } else {
+      PyErr_SetString(PyExc_TypeError, "PyStatPacketToNative() failed");
       return false;
     }
 
@@ -343,15 +349,18 @@ static inline bool PySavePacketToNative(
       char* flags;
 
       if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
+        PyErr_SetString(PyExc_TypeError, "PyByteArray_Size failed");
         return false;
       }
 
       if ((flags = PyByteArray_AsString(pSavePkt->flags))) {
         memcpy(sp->flags, flags, sizeof(sp->flags));
       } else {
+        PyErr_SetString(PyExc_TypeError, "PyByteArray_AsString failed");
         return false;
       }
     } else {
+      PyErr_SetString(PyExc_TypeError, "flags need to be of type bytearray");
       return false;
     }
 
@@ -359,35 +368,54 @@ static inline bool PySavePacketToNative(
     if (IS_FT_OBJECT(sp->type)) {
       // See if a proper restore object was created.
       if (pSavePkt->object_len > 0) {
-        // required for full backup run, so save it in plugin_priv_ctx
-        if (pSavePkt->object_name && pSavePkt->object
-            && PyBytes_Check(pSavePkt->object_name)
-            && PyBytes_Check(pSavePkt->object)) {
-          char* buf;
-
-          if (plugin_priv_ctx->object_name) {
-            free(plugin_priv_ctx->object_name);
-          }
-          plugin_priv_ctx->object_name
-              = strdup(PyBytes_AsString(pSavePkt->object_name));
-          sp->object_name = plugin_priv_ctx->object_name;
-
-          sp->object_len = pSavePkt->object_len;
-          sp->index = pSavePkt->object_index;
-
-          if ((buf = PyBytes_AsString(pSavePkt->object))) {
-            if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
-            plugin_priv_ctx->object = (char*)malloc(pSavePkt->object_len);
-            memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
-            sp->object = plugin_priv_ctx->object;
-          } else {
-            return false;
-          }
-        } else {
+        if (!pSavePkt->object_name) {
+          std::string errorstring("object_name is empty");
+          PyErr_SetString(PyExc_TypeError, errorstring.c_str());
           return false;
         }
-      } else {
-        return false;
+        if (!pSavePkt->object) {
+          std::string errorstring("object is empty");
+          PyErr_SetString(PyExc_TypeError, errorstring.c_str());
+          return false;
+        }
+
+        if (!PyBytes_Check(pSavePkt->object_name)) {
+          std::string errorstring("object_name needs to be bytes but is: ");
+          errorstring += Py_TYPE(pSavePkt->object_name)->tp_name;
+          PyErr_SetString(PyExc_TypeError, errorstring.c_str());
+          return false;
+        }
+        if (!PyByteArray_Check(pSavePkt->object)) {
+          std::string errorstring("object needs to be bytearray but is: ");
+          errorstring += Py_TYPE(pSavePkt->object)->tp_name;
+          PyErr_SetString(PyExc_TypeError, errorstring.c_str());
+          return false;
+        }
+
+        // required for full backup run, so save it in plugin_priv_ctx
+        char* buf;
+
+        if (plugin_priv_ctx->object_name) {
+          free(plugin_priv_ctx->object_name);
+        }
+        plugin_priv_ctx->object_name
+            = strdup(PyBytes_AsString(pSavePkt->object_name));
+        sp->object_name = plugin_priv_ctx->object_name;
+
+        sp->object_len = pSavePkt->object_len;
+        sp->index = pSavePkt->object_index;
+
+        if ((buf = PyByteArray_AsString(pSavePkt->object))) {
+          if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
+
+          plugin_priv_ctx->object = (char*)malloc(pSavePkt->object_len);
+          memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
+          sp->object = plugin_priv_ctx->object;
+        } else {
+          PyErr_SetString(PyExc_TypeError,
+                          "PyByteArray_AsString of object failed");
+          return false;
+        }
       }
     } else {
       sp->no_read = pSavePkt->no_read;
@@ -401,6 +429,7 @@ static inline bool PySavePacketToNative(
       char* flags;
 
       if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
+        PyErr_SetString(PyExc_TypeError, "flags need to be of type bytearray");
         return false;
       }
 
@@ -451,6 +480,8 @@ static bRC PyStartBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp)
 
       if (!PySavePacketToNative(pSavePkt, sp, plugin_priv_ctx, false)) {
         Py_DECREF((PyObject*)pSavePkt);
+        Dmsg(plugin_ctx, debuglevel,
+             LOGPREFIX "PySavePacketToNative() failed\n");
         goto bail_out;
       }
       Py_DECREF((PyObject*)pSavePkt);
@@ -1153,7 +1184,7 @@ static inline PyRestoreObject* NativeToPyRestoreObject(
       = PyObject_New(PyRestoreObject, &PyRestoreObjectType);
 
   if (pRestoreObject) {
-    pRestoreObject->object_name = PyUnicode_FromString(rop->object_name);
+    pRestoreObject->object_name = PyBytes_FromString(rop->object_name);
     pRestoreObject->object
         = PyByteArray_FromStringAndSize(rop->object, rop->object_len);
     pRestoreObject->plugin_name = rop->plugin_name;
@@ -1703,8 +1734,8 @@ static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
   /// TODO !!!!
   sp.type = pSavePkt->type;
   if (pSavePkt->fname) {
-    if (PyUnicode_Check(pSavePkt->fname)) {
-      sp.fname = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->fname));
+    if (PyBytes_Check(pSavePkt->fname)) {
+      sp.fname = const_cast<char*>(PyBytes_AsString(pSavePkt->fname));
     } else {
       goto bail_out;
     }
@@ -1713,7 +1744,7 @@ static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
   }
   if (pSavePkt->link) {
     if (PyUnicode_Check(pSavePkt->link)) {
-      sp.link = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->link));
+      sp.link = const_cast<char*>(PyBytes_AsString(pSavePkt->link));
     } else {
       goto bail_out;
     }
@@ -1752,8 +1783,8 @@ static PyObject* PyBareosAcceptFile(PyObject* self, PyObject* args)
    * that here separately and don't call PySavePacketToNative().
    */
   if (pSavePkt->fname) {
-    if (PyUnicode_Check(pSavePkt->fname)) {
-      sp.fname = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->fname));
+    if (PyBytes_Check(pSavePkt->fname)) {
+      sp.fname = const_cast<char*>(PyBytes_AsString(pSavePkt->fname));
     } else {
       goto bail_out;
     }
