@@ -83,10 +83,10 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
         if os.path.exists(self.options["filename"].encode()):
             try:
                 config_file = open(self.options["filename"].encode(), "rb")
-            except:
+            except Exception as e:
                 bareosfd.DebugMessage(
                     100,
-                    "Could not open file %s\n" % (self.options["filename"].encode()),
+                    "Could not open file %s: %s\n" % (self.options["filename"], e),
                 )
                 return bareosfd.bRC_Error
         else:

@@ -102,56 +102,68 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         We try to read from filename and setup the list of file to backup
         in self.files_to_backup
         """
-
         bareosfd.DebugMessage(
             100,
-            "Using %s to search for local files\n" % (self.options["filename"]),
+            "Using %s to search for local files\n" % self.options["filename"],
         )
-        if os.path.exists(self.options["filename"]):
-            try:
-                config_file = open(self.options["filename"], "rb")
-            except Exception as e:
-                bareosfd.DebugMessage(
-                    100,
-                    "Could not open file %s: %s\n" % (self.options["filename"], e),
-                )
-                return bRC_Error
-        else:
+        try:
+            config_file = open(self.options["filename"].encode(), "rb")
+        except Exception as e:
             bareosfd.DebugMessage(
-                100, "File %s does not exist\n" % (self.options["filename"])
+                100,
+                "Could not open file %s: %s\n" % (self.options["filename"], e),
             )
-            return bRC_Error
+            return bareosfd.bRC_Error
+
         # Check, if we have allow or deny regular expressions defined
         if "allow" in self.options:
             self.allow = re.compile(self.options["allow"])
         if "deny" in self.options:
             self.deny = re.compile(self.options["deny"])
 
-        for listItem in config_file.read().splitlines():
-            if os.path.isfile(listItem) and self.filename_is_allowed(
-                listItem, self.allow, self.deny
-            ):
-                self.files_to_backup.append(listItem)
-            if os.path.isdir(listItem):
-                for topdir, dirNames, fileNames in os.walk(listItem):
-                    for fileName in fileNames:
-                        if self.filename_is_allowed(
-                            os.path.join(topdir, fileName),
-                            self.allow,
-                            self.deny,
-                        ):
-                            self.files_to_backup.append(os.path.join(topdir, fileName))
-                            if os.path.isfile(os.path.join(topdir, fileName)):
-                                self.files_to_backup.append(
-                                    os.path.join(topdir, fileName) + b".sha256sum"
-                                )
-                                self.files_to_backup.append(
-                                    os.path.join(topdir, fileName) + b".abspath"
-                                )
-            else:
-                if os.path.isfile(listItem):
-                    self.files_to_backup.append(listItem + b".sha256sum")
-                    self.files_to_backup.append(listItem + b".abspath")
+        try:
+            for listItem in config_file.read().splitlines():
+                bareosfd.DebugMessage(
+                    100,
+                    "Processing :%s \n" % listItem,
+                )
+                if os.path.isfile(listItem) and self.filename_is_allowed(
+                    listItem, self.allow, self.deny
+                ):
+                    bareosfd.DebugMessage(
+                        100,
+                        "Appending  file :%s \n" % listItem,
+                    )
+                    self.files_to_backup.append(listItem)
+                if os.path.isdir(listItem):
+                    for topdir, dirNames, fileNames in os.walk(listItem):
+                        for fileName in fileNames:
+                            if self.filename_is_allowed(
+                                os.path.join(topdir, fileName),
+                                self.allow,
+                                self.deny,
+                            ):
+                                bareosfd.DebugMessage( 100, "Is allowed: :%s \n" % fileName,)
+                                self.files_to_backup.append(os.path.join(topdir, fileName))
+                                fullpath = os.path.join(topdir, fileName)
+                                if os.path.isfile(fullpath):
+                                    bareosfd.DebugMessage( 100, "appending :%s \n" % fullpath,)
+                                    self.files_to_backup.append(
+                                        fullpath + b".sha256sum"
+                                    )
+                                    self.files_to_backup.append(
+                                        fullpath + b".abspath"
+                                    )
+                else:
+                    if os.path.isfile(listItem):
+                        self.files_to_backup.append(listItem + b".sha256sum")
+                        self.files_to_backup.append(listItem + b".abspath")
+
+        except Exception as e:
+            bareosfd.DebugMessage(
+                100,
+                "config file read problems: \n" % (e),
+            )
 
         for longrestoreobject_length in range(998, 1004):
             try:
@@ -169,14 +181,12 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
                 100,
                 "No (allowed) files to backup found\n",
             )
-            sleep (10);
-            bareosfd.JobMessage(
-                M_INFO,
-                "No (allowed) files to backup found\n",
-            )
             return bRC_Error
         else:
-            return bRC_Cancel
+            bareosfd.DebugMessage(
+                100,
+                "{} files to backup\n".format(len(self.files_to_backup)))
+            return bRC_OK
 
     def start_backup_file(self, savepkt):
         """
@@ -209,7 +219,7 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
                 savepkt.fname = file_to_backup
                 savepkt.object_name = file_to_backup
                 savepkt.object = bytearray(
-                    os.path.splitext(file_to_backup)[0].encode("utf-8")
+                    os.path.splitext(file_to_backup)[0])
                 )
 
                 savepkt.object_len = len(savepkt.object)
@@ -265,7 +275,7 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
             % (str(restorepkt)),
         )
 
-        orig_fname = "/" + os.path.relpath(restorepkt.ofname, restorepkt.where)
+        orig_fname = b"/" + os.path.relpath(restorepkt.ofname, restorepkt.where)
         bareosfd.DebugMessage(
             100, "set_file_attributes() orig_fname: {} \n".format(orig_fname)
         )
