@@ -78,7 +78,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
 
         bareosfd.DebugMessage(100, "Found files to backup\n")
         self.file_to_backup = self.files_to_backup.pop()
-        bareosfd.DebugMessage(100, "file: " + self.file_to_backup.decode("utf-8", "replace") + "\n")
+        #bareosfd.DebugMessage(100, "file: " + self.file_to_backup.decode("utf-8", "replace") + "\n")
 
         mystatp = bareosfd.StatPacket()
         try:
@@ -247,10 +247,10 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         return bareosfd.bRC_OK
 
     def end_restore_file(self):
-        bareosfd.DebugMessage(
-            100,
-            "end_restore_file() entry point in Python called FNAME: %s\n" % self.FNAME.decode("utf-8","ignore"),
-        )
+        #bareosfd.DebugMessage(
+        #    100,
+        #    "end_restore_file() entry point in Python called FNAME: %s\n" % self.FNAME.decode("utf-8","ignore"),
+        #)
         #bareosfd.DebugMessage(
         #    150,
         #    "end_restore_file set file attributes "
