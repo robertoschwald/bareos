@@ -2045,19 +2045,26 @@ static PyObject* PySavePacket_repr(PySavePacket* self)
 {
   PyObject* s;
   PoolMem buf(PM_MESSAGE);
+  PyObject* py_fname = NULL;
+  PyObject* py_link = NULL;
+  if (self->fname) py_fname = PyObject_Repr(self->fname);
+  if (self->link) py_link = PyObject_Repr(self->link);
 
   Mmsg(buf,
        "SavePacket(fname=\"%s\", link=\"%s\", type=%ld, flags=%s, "
        "no_read=%d, portable=%d, accurate_found=%d, "
        "cmd=\"%s\", save_time=%ld, delta_seq=%ld, object_name=\"%s\", "
        "object=\"%s\", object_len=%ld, object_index=%ld)",
-       PyGetBytesValue(self->fname), PyGetBytesValue(self->link), self->type,
+       PyGetBytesValue(py_fname), PyGetBytesValue(py_link), self->type,
        print_flags_bitmap(self->flags), self->no_read, self->portable,
        self->accurate_found, self->cmd, self->save_time, self->delta_seq,
        PyGetBytesValue(self->object_name), PyGetByteArrayValue(self->object),
        self->object_len, self->object_index);
 
   s = PyUnicode_FromString(buf.c_str());
+
+  if (py_fname) Py_DECREF(py_fname);
+  if (py_link) Py_DECREF(py_link);
 
   return s;
 }
@@ -2114,18 +2121,13 @@ static void PySavePacket_dealloc(PySavePacket* self)
 // Representation.
 static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
 {
-  PyObject* stat_repr;
   PyObject* s;
   PoolMem buf(PM_MESSAGE);
 
-  PyObject* py_ofname
-      = PyUnicode_FromEncodedObject(self->ofname, "utf-8", "ignore");
-  PyObject* py_olname
-      = PyUnicode_FromEncodedObject(self->olname, "utf-8", "ignore");
-  PyObject* py_where
-      = PyUnicode_FromEncodedObject(self->where, "utf-8", "ignore");
-
-  stat_repr = PyObject_Repr(self->statp);
+  PyObject* py_ofname = PyObject_Repr(self->ofname);
+  PyObject* py_olname = PyObject_Repr(self->olname);
+  PyObject* py_where = PyObject_Repr(self->where);
+  PyObject* stat_repr = PyObject_Repr(self->statp);
   Mmsg(buf,
        "RestorePacket(stream=%d, data_stream=%ld, type=%ld, file_index=%ld, "
        "linkFI=%ld, uid=%ld, statp=\"%s\", attrEx=\"%s\", ofname=\"%s\", "
@@ -2138,8 +2140,10 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
        self->replace, self->create_status);
 
   s = PyUnicode_FromString(buf.c_str());
-  Py_DECREF(py_ofname);
-  Py_DECREF(py_olname);
+
+  if (py_ofname) Py_DECREF(py_ofname);
+  if (py_olname) Py_DECREF(py_olname);
+  Py_DECREF(py_where);
   Py_DECREF(stat_repr);
 
   return s;
