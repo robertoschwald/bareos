@@ -750,7 +750,12 @@ static inline PyRestorePacket* NativeToPyRestorePacket(struct restore_pkt* rp)
     pRestorePacket->ofname = PyBytes_FromString(rp->ofname);
     pRestorePacket->olname = PyBytes_FromString(rp->olname);
     pRestorePacket->where = PyBytes_FromString(rp->where);
-    pRestorePacket->RegexWhere = PyBytes_FromString(rp->RegexWhere);
+
+    if (rp->RegexWhere) {
+      pRestorePacket->RegexWhere = PyBytes_FromString(rp->RegexWhere);
+    } else {
+      pRestorePacket->RegexWhere = PyBytes_FromString("");
+    }
     pRestorePacket->replace = rp->replace;
     pRestorePacket->create_status = rp->create_status;
   }
@@ -2170,9 +2175,12 @@ static int PyRestorePacket_init(PyRestorePacket* self,
   if (!PyArg_ParseTupleAndKeywords(
           args, kwds, "|iiiiiIosssssii", kwlist, &self->stream,
           &self->data_stream, &self->type, &self->file_index, &self->LinkFI,
-          &self->uid, &self->statp, &self->attrEx, &self->ofname, &self->olname,
-          &self->where, &self->RegexWhere, &self->replace,
-          &self->create_status)) {
+          &self->uid, &self->statp, &self->attrEx,
+
+          // paths
+          &self->ofname, &self->olname, &self->where, &self->RegexWhere,
+
+          &self->replace, &self->create_status)) {
     return -1;
   }
 
