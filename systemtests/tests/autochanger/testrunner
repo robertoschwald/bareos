@@ -57,7 +57,7 @@ for i in $(seq ${NUMBER_OF_POOLS}); do
   pool=$(( i -1 )) #counts from 0
   for j in $(seq ${NUMBER_OF_TAPES_PER_POOL}); do
     slot=$(( j + pool * NUMBER_OF_TAPES_PER_POOL )) #counts from 1
-    echo "label barcodes slot=${slot} drive=0 pool=Full-${pool} storage=Tape-0 yes" | bin/bconsole | grep "OK label"
+    echo "label barcodes slot=${slot} drive=0 pool=Full-${pool} storage=Tape-0 yes" | bin/bconsole
   done
 done
 
