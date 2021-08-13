@@ -32,7 +32,6 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $tmp/log1.out
-setdebug level=100 storage=File
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
 status director
@@ -46,7 +45,16 @@ messages
 @#
 @$out $tmp/log1.out
 label volume=TestCopyVolume001 storage=File2 pool=FullCopy
-run copy yes
+setdebug level=100 director trace=1
+setdebug director level=200 trace=1
+@#run job="copy" yes
+@#run job="copy" jobid=1 ignoreduplicatecheck=yes yes
+run job="copy" jobid=1 yes
+run job="copy" jobid=1 yes
+run job="copy" jobid=1 yes
+run job="copy" jobid=1 yes
+run job="copy" jobid=1 yes
+run job="copy" jobid=1 yes
 status director
 status client
 status storage=File

@@ -156,7 +156,7 @@ struct wait_pkt {
  * this routine is only used for jobs started from the console
  * for which the user explicitly specified a start time. Otherwise
  * most jobs are put into the job queue only when their
- * scheduled time arives.
+ * scheduled time arrives.
  */
 extern "C" void* sched_wait(void* arg)
 {
