@@ -51,7 +51,6 @@ $\r$\n\
 [/DIRECTORPASSWORD=password]$\r$\n\
 $\r$\n\
 [/INSTALLDIRECTOR]$\r$\n\
-[/DBDRIVER=database driver <postgresql (default)|sqlite3>]$\r$\n\
 [/DBADMINUSER=database user (only Postgres)]$\r$\n\
 [/DBADMINPASSWORD=database password (only Postgres)]$\r$\n\
 [/INSTALLWEBUI requires 'Visual C++ Redistributable for Visual Studio 2012 x86', sets /INSTALLDIRECTOR]$\r$\n\
@@ -806,7 +805,6 @@ Section -DataBaseCheck
 IfSilent 0 DataBaseCheckEnd  # if we are silent, we do the db credentials check, otherwise the db dialog will do it
 
 StrCmp $InstallDirector "no" DataBaseCheckEnd # skip DbConnection if not installing director
-StrCmp $DbDriver "sqlite3" DataBaseCheckEnd # skip DbConnection if not installing director
 
 ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
 !insertmacro CheckDbAdminConnection
@@ -815,56 +813,6 @@ ${EndIF}
 DataBaseCheckEnd:
 SectionEnd
 
-
-
-
-
-Section /o "Director SQLite Backend Support " SEC_DIR_SQLITE
-SectionIn 2
-  SetShellVarContext all
-
-  SetOutPath "$INSTDIR"
-  File "sqlite3.exe"
-  File "libsqlite3-0.dll"
-  File "libbareoscats-sqlite3.dll"
-
-  Rename  "$PLUGINSDIR\sqlite3.sql" "$APPDATA\${PRODUCT_NAME}\scripts\sqlite3.sql"
-
-  #  write database create batch file sqlite3
-  #
-  FileOpen $R1 "$APPDATA\${PRODUCT_NAME}\scripts\sqlite3-createdb.bat" w
-  FileWrite $R1 'REM  call this batch file to create the bareos database in sqlite3 $\r$\n'
-  FileWrite $R1 'REM $\r$\n'
-  FileWrite $R1 'REM $\r$\n'
-  FileWrite $R1 'REM  create sqlite3 database $\r$\n'
-
-  FileWrite $R1 "cd $APPDATA\${PRODUCT_NAME}\scripts\$\r$\n"
-
-  FileWrite $R1 "echo creating bareos database$\r$\n"
-  FileWrite $R1 "$\"$INSTDIR\sqlite3.exe$\" $\"$APPDATA\${PRODUCT_NAME}\\working\bareos.db$\" < $\"$APPDATA\${PRODUCT_NAME}\scripts\sqlite3.sql$\"$\r$\n"
-  FileClose $R1
-
-  #
-  # write database dump file
-  #
-  FileOpen $R1 "$APPDATA\${PRODUCT_NAME}\scripts\make_catalog_backup.bat" w
-  FileWrite $R1 '@echo off$\r$\n'
-  FileWrite $R1 'REM  call this batch file to create a db dump$\r$\n'
-  FileWrite $R1 'REM  create sqlite3 database dump$\r$\n'
-  FileWrite $R1 'echo dumping bareos database$\r$\n'
-  FileWrite $R1 "echo .dump | $\"$INSTDIR\sqlite3.exe$\" $\"$APPDATA\${PRODUCT_NAME}\\working\bareos.db$\" > $\"$APPDATA\${PRODUCT_NAME}\working\bareos.sql$\"$\r$\n"
-  FileClose $R1
-
-  #
-  # write delete sql dump file
-  #
-  FileOpen $R1 "$APPDATA\${PRODUCT_NAME}\scripts\delete_catalog_backup.bat" w
-  FileWrite $R1 '@echo off $\r$\n'
-  FileWrite $R1 'REM this script deletes the db dump $\r$\n'
-  FileWrite $R1 'del $APPDATA\${PRODUCT_NAME}\working\bareos.sql $\r$\n'
-  FileClose $R1
-
-SectionEnd
 
 
 Section /o "Director Plugins" SEC_DIRPLUGINS
@@ -1072,9 +1020,6 @@ ${Else}
 ${EndIf}
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIR_POSTGRES} "$SEC_DIR_POSTGRES_DESCRIPTION"
 
-
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIR_SQLITE} "SQLite Catalog Database Support - Uses integrated SQLite Support"
-
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIRPLUGINS} "Installs the Bareos Director Plugins"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_DIR} "Opens the needed ports for the Director Daemon in the windows firewall"
 
@@ -1251,11 +1196,6 @@ Section -StartDaemon
        nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat > $PLUGINSDIR\db_setup_output.log"
        StrCmp $WriteLogs "yes" 0 +2
           LogEx::AddFile "   >" "$PLUGINSDIR\db_setup_output.log"
-
-     ${ElseIf} $DbDriver == sqlite3
-       # create sqlite3 db
-       LogText "### Executing $APPDATA\${PRODUCT_NAME}\scripts\sqlite3-createdb.bat"
-       nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\sqlite3-createdb.bat > $PLUGINSDIR\db_setup_output.log"
 
      ${EndIf}
 
@@ -1588,8 +1528,6 @@ done:
   File "/oname=$PLUGINSDIR\postgresql-grant.sql" ".\ddl\grants\postgresql.sql"
   # File "/oname=$PLUGINSDIR\postgresql.sql" ".\ddl\updates\postgresql.sql"
 
-  File "/oname=$PLUGINSDIR\sqlite3.sql" ".\ddl\creates\sqlite3.sql"
-
   # webui
   File "/oname=$PLUGINSDIR\php.ini" ".\bareos-webui\php\php.ini"
   File "/oname=$PLUGINSDIR\global.php" ".\bareos-webui\config\autoload\global.php"
@@ -1620,27 +1558,12 @@ done:
     SectionSetFlags ${SEC_BCONSOLE} ${SF_SELECTED} # bconsole
 
 IfSilent 0 DbDriverCheckEnd
-${If} $DbDriver == sqlite3
-  LogText "DbDriver is sqlite3"
-  SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_UNSELECTED}
-  SectionSetFlags ${SEC_DIR_SQLITE} ${SF_SELECTED}
-${ElseIf} $DbDriver == postgresql
   LogText "DbDriver is postgresql"
   SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_SELECTED}
-  SectionSetFlags ${SEC_DIR_SQLITE} ${SF_UNSELECTED}
-${Else}
-  LogText "DbDriver needs to be sqlite3 or postgresql but is $DbDriver"
-  Abort
-${EndIf}
 DbDriverCheckEnd:
 
-IfSilent AutoSelecPostgresIfAvailableEnd
-${If} $IsPostgresInstalled == yes
-    SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_SELECTED}
-    SectionSetFlags ${SEC_DIR_SQLITE} ${SF_UNSELECTED}
-${Else}
-    SectionSetFlags ${SEC_DIR_SQLITE} ${SF_SELECTED}
-${EndIf}
+  IfSilent AutoSelecPostgresIfAvailableEnd
+  SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_SELECTED}
 AutoSelecPostgresIfAvailableEnd:
 
   dontInstDir:
@@ -1938,7 +1861,6 @@ Function getDatabaseParametersLeave
 dbcheckend:
 
    StrCmp $InstallDirector "no" SkipDbCheck # skip DbConnection if not instaling director
-   StrCmp $DbDriver "sqlite3" SkipDbCheck   # skip DbConnection of using sqlite3
 
    ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
      !insertmacro CheckDbAdminConnection
@@ -2123,10 +2045,6 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libbareoscats.dll"
   Delete "$INSTDIR\libbareoscats-postgresql.dll"
 
-  Delete "$INSTDIR\libbareoscats-sqlite3.dll"
-  Delete "$INSTDIR\libsqlite3-0.dll"
-  Delete "$INSTDIR\sqlite3.exe"
-
   Delete "$INSTDIR\libcrypto-*.dll"
   Delete "$INSTDIR\libgcc_s_*-1.dll"
   Delete "$INSTDIR\libhistory8.dll"
@@ -2249,11 +2167,6 @@ Function .onSelChange
   Push $R0
   Push $R1
 
-  # !insertmacro StartRadioButtons $1
-  # !insertmacro RadioButton ${SEC_DIR_POSTGRES}
-  # !insertmacro RadioButton ${SEC_DIR_SQLITE}
-  # !insertmacro EndRadioButtons
-
   # if Postgres was not detected always disable postgresql backend
 
   ${If} $IsPostgresInstalled == no
@@ -2273,11 +2186,6 @@ Function .onSelChange
   StrCmp $R0 ${SF_SELECTED} 0 +3
   StrCpy $InstallDirector "yes"
   SectionSetFlags ${SEC_BCONSOLE} ${SF_SELECTED} # bconsole
-
-  SectionGetFlags ${SEC_DIR_SQLITE} $R0
-  IntOp $R0 $R0 & ${SF_SELECTED}
-  StrCmp $R0 ${SF_SELECTED} 0 +2
-  StrCpy $DbDriver "sqlite3"
 
   SectionGetFlags ${SEC_DIR_POSTGRES} $R0
   IntOp $R0 $R0 & ${SF_SELECTED}
