@@ -1,3 +1,114 @@
+
+Hardware Sizing ===============
+
+Database System ---------------
+
+It is always advisable to use the **newest** currently **supported
+|postgresql|** on your platform.  With identical contents, we have observed
+that *|postgresql| 12* required *half of the space* of a *|postgresql| 10*
+Installation.
+
+The by far **biggest table in the bareos database** is the **file** table.  It
+typically consumes about **90-95%** of the database size.
+
+The **size of the file table** depends on the number of files that need to be
+stored and the average size of the filename.
+
+Roughly **1/3 of the file table size** is consumed by the **index**.  To have
+optimal performance, the **RAM size available** for the bareos database should
+be at least the **size of the file table index**.
+
+The database files should be stored on **SSD storage**.
+
+The database configuration should be optimized for the size of memory that the
+database has available.  A good starting point is using pgtune, a website that
+allows to set some basic information and generates a postgresql configuration.
+
+Depending on the number of files and the average length of filenames, the
+**database size** can be **estimated** via the following calculations:
+
+To **calculate the number of files** in the DB, the number of files being
+backed up from all systems needs to be multiplied by the number of times that
+they will be kept in the database.
+
+The **amount of data per file** in the DB, depends on the size of filenames
+that are being backed up, but we have analyzed some real-world examples and
+found that values between **250 and 350 bytes per row** are usual.
+
+*Example:* If **200.000 files** are backed up during a full backup, a full
+backup is run **every week** and the retention of the backups is **1 month**,
+the total amount of files would be
+
+200.000 Files * 4 Full Backups = 800.000 rows in the file table.  Number of Files in
+file table * 300 bytes/row = 240 GB Database size.  About 1/3 of the DB Size
+should be available as RAM, so about 80 GB.
+
+
+CPU considerations
+------------------
+
+During backups with bareos, the amount of CPU consumed is influenced
+by different parameters.
+
+System being backed up
+----------------------
+
+Often is the backup speed limited by the I/O speed that can
+be read from the original filesystem.
+
+The I/O speed of the filesystems being backed up or the network bandwidth are
+often not fast enough to saturate the CPU.
+
+The **TLS communication encryption** (enabled by default) also consumes CPU power,
+especially when the I/O rate is very fast.
+
+If **data encryption** is configured, the encryption is calculated on the source
+system and will consume CPU power there.
+
+If data **compression** is configured, the compression is also executed on the
+source system and will consume CPU power there.
+
+Storage Daemon System
+---------------------
+
+The storage daemon receives the data from the clients and stores it to the
+storage media.
+
+The Storage Daemon receives the data stream coming from the Clients and  stores
+the data to local storage media.
+
+The most CPU Power is consumed by the decryption of the TLS stream and by
+calculating Checksums that are verified before storing data to the storage
+media.
+
+Depending on the available I/O throughput and the number of parallel jobs,
+different optimizations can be made:
+
+If a relative small number of  clients can send data at very high I/O rates, it
+can make sense to disable Hyperthreading Technologies so that less cores can
+operate at higher speed.
+
+Usually, the available I/O throughput is not so high, so more but slower CPUs
+are more convenient, so that more backups can be run in parallel so the overall
+backup speed can be increased.
+
+RAM: 512MB * Number of parallel jobs concurrently processed. CPU: 0.25 - 1.00
+cores per job being processed concurrently.
+
+Director
+--------
+
+The Director daemon itself has comparatively low CPU and RAM
+requirements. Most of the really expensive calculations are done by the
+database engine.
+
+It is recommended to run the Director service together with the database server
+on the same machine, which minimizes the latency and overhead of the
+communication with the database.
+
+
+
+
 .. _SupportedOSes:
 
 Operating Systems
