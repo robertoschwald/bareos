@@ -65,6 +65,9 @@ especially when the I/O rate is very fast.
 If **data encryption** is configured, the encryption is calculated on the source
 system and will consume CPU power there.
 
+If **signatures** are enalbed in your fileset, this will require additional CPU cycles to be calculated on the source system.
+system and will consume CPU power there.
+
 If data **compression** is configured, the compression is also executed on the
 source system and will consume CPU power there.
 
