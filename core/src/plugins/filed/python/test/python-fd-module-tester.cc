@@ -100,8 +100,8 @@ bRC bareosJobMsg(PluginContext* ctx,
                  const char* fmt,
                  ...)
 {
-  printf("bareosJobMsg file:%s line:%d type:%d time: %ld, fmt:%s\n", file, line,
-         type, (int64_t)mtime, fmt);
+  printf("bareosJobMsg file:%s line:%d type:%d time: %+" PRId64 ", fmt:%s\n",
+         file, line, type, (int64_t)mtime, fmt);
   return bRC_OK;
 };
 bRC bareosDebugMsg(PluginContext* ctx,
