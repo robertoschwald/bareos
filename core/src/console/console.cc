@@ -465,7 +465,7 @@ static char* item_generator(const char* text,
                             cpl_item_t type)
 {
   static std::size_t list_index, len;
-  static std::size_t items_list_size = items->list.size();
+  const std::size_t items_list_size = items->list.size();
   const char* name;
 
 
