@@ -34,3 +34,7 @@ foreach(in_file ${IN_FILES})
   message(STATUS "creating file ${file}")
   configure_file(${in_file} ${file} @ONLY)
 endforeach()
+
+# write a copy of config.h into ${CMAKE_BINARY_DIR}
+file (READ "${CMAKE_SOURCE_DIR}/core/src/include/config.h" TEXT)
+file (WRITE ${CMAKE_BINARY_DIR}/config.h ${TEXT})
