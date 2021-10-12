@@ -37,4 +37,6 @@ endforeach()
 
 # write a copy of config.h into ${CMAKE_BINARY_DIR}
 file (READ "${CMAKE_SOURCE_DIR}/core/src/include/config.h" TEXT)
-file (WRITE ${CMAKE_BINARY_DIR}/config.h ${TEXT})
+message (STATUS "BEGIN CONTENT OF config.h")
+message (${TEXT} )
+message (STATUS "END CONTENT OF config.h")
