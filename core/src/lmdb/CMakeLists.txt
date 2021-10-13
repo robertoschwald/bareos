@@ -26,7 +26,7 @@ add_library(bareoslmdb SHARED mdb.c midl.c)
 target_compile_options(bareoslmdb PRIVATE -Wno-missing-braces)
 
 # set target_link_options so lto doesn't complain either
-if(NOT HAVE_DARWIN_OS OR NOT HAVE_FREEBSD_OS)
+if(NOT HAVE_FREEBSD_OS)
   target_link_options(bareoslmdb PRIVATE -Wno-stringop-overflow)
   target_compile_options(
     bareoslmdb PRIVATE -Wno-stringop-overflow -Wno-return-local-addr
